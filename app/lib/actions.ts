@@ -21,6 +21,9 @@ const FormSchema = z.object({
   date: z.string(),
 });
 
+const CreateInvoice = FormSchema.omit({ id: true, date: true });
+const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+
 export type State = {
   errors?: {
     customerId?: string[];
@@ -57,10 +60,11 @@ export async function createInvoice(prevState: State, formData: FormData) {
       INSERT INTO invoices (customer_id, amount, status, date)
       VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
     `;
-  } catch (error) {
+  } catch (_error) {
     // If a database error occurs, return a more specific error.
     return {
       message: "Database Error: Failed to Create Invoice.",
+      _error,
     };
   }
 
@@ -68,6 +72,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
   revalidatePath("/dashboard/invoices");
   redirect("/dashboard/invoices");
 }
+
 export async function updateInvoice(
   id: string,
   prevState: State,
@@ -95,22 +100,24 @@ export async function updateInvoice(
       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
       WHERE id = ${id}
     `;
-  } catch (error) {
-    return { message: "Database Error: Failed to Update Invoice." };
+  } catch (_error) {
+    return { message: "Database Error: Failed to Update Invoice.", _error };
   }
 
   revalidatePath("/dashboard/invoices");
   redirect("/dashboard/invoices");
 }
+
 export async function deleteInvoice(id: string) {
   try {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
     revalidatePath("/dashboard/invoices");
-    return { message: "Deleted Invoice." };
-  } catch (error) {
-    return { message: "Database Error: Failed to Delete Invoice." };
+    console.log("deleted invoice");
+  } catch (_error) {
+    console.log("Database Error: Failed to Delete Invoice", _error);
   }
 }
+
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData
